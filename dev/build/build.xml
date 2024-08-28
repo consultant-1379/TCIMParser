@@ -1,0 +1,106 @@
+
+<project name="TCIMParser" default="compile" xmlns:sonar="antlib:org.sonar.ant">
+
+  <property name="pack.name" value="TCIMParser"/>
+  <property name="pack.version" value="5-0-0"/>
+
+  <!-- Attention! pack.dir have to be under tmp-dir because the actual build is done there -->
+  <property name="pack.dir" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/TCIMParser/dev"/>
+
+  <!-- ENIQ Jars -->
+  <property name="eniq.parser.dir" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/parser/build/parser"/>
+  <property name="eniq.common_utilities.dir" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/common_utilities/build/common_utilities"/>
+
+  <!-- 3PP Jars -->
+  <property name="3pp.xerces.dir" value="/proj/eiffel013_config_fem6s11/3pp/apache/xerces_parser/v2_6_2/prod"/>
+
+  <target name="precompile"/>
+
+  <target name="compile">
+    <mkdir dir="${pack.dir}/classes"/>
+    <javac srcdir="${pack.dir}/src" destdir="${pack.dir}/classes"
+           failonerror="true"
+           debug="off"
+           optimize="off"
+           deprecation="off">
+<compilerarg value="-Xlint:all" />
+      <classpath>
+        <pathelement path="${classpath}"/>
+            <fileset dir="${eniq.common_utilities.dir}">
+                <include name="**/*.jar"/>
+            </fileset>
+            <fileset dir="${eniq.parser.dir}">
+                <include name="**/*.jar"/>
+            </fileset>
+            <fileset dir="${3pp.xerces.dir}">
+                <include name="**/*.jar"/>
+            </fileset>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="postcompile"/>
+
+   <!-- Define the SonarQube global properties (the most usual way is to pass these properties via the command line) -->
+   <property name="sonar.host.url" value="https://sonarqube.lmera.ericsson.se" />
+
+   <!-- Define the Sonar properties -->
+   <property name="sonar.projectKey" value="sonarqube-scanner-TCIMParser" />
+   <property name="sonar.projectName" value="Eniq TCIMParser" />
+   <property name="sonar.projectVersion" value="1.0" />
+   <property name="sonar.sources" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/TCIMParser/dev/src" />
+   <property name="sonar.java.binaries" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/TCIMParser/dev" />
+   <property name="sonar.sourceEncoding" value="UTF-8" />
+   <property name="sonar.login" value="c0155596d4750df78cf56c80edb6797d13ac47b4" />
+   <property name="sonar.projectBaseDir" value="/proj/eiffel013_config_fem6s11/eiffel_home/jobs/Git_TCIMParser_build/TCIMParser/dev/" />
+
+
+   <target name="compile_sonar">
+       <javac srcdir="${pack.dir}/src" destdir="${pack.dir}/classes" fork="true" debug="true" includeAntRuntime="false" />
+   </target>
+
+   <!-- ========= Define SonarQube Scanner for Ant Target ========= -->
+   <target name="sonar" depends="compile_sonar">
+       <taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+           <classpath path="/proj/eiffel004_config_fem156/slaves/Compute_Farm_Security/test/sonarqube-ant-task-2.7.0.1612.jar" />
+       </taskdef>
+
+       <!-- Execute SonarQube Scanner for Ant Analysis -->
+       <sonar:sonar />
+   </target>
+    <target name="clean">
+        <delete dir="${pack.dir}/classes"/>
+    </target>
+
+
+   <!-- ========= The main target "all" ========= -->
+    <target name="all_sonar" depends="compile_sonar,sonar,clean" />
+
+   <target name="sonarQualityCheck" description="SonarQube Quality Gate check"> 
+	 <exec executable="/bin/sh" outputproperty="qualitySleep"> 
+		 <arg value="-c" /> 
+		 <arg value="sleep 60" /> 
+	 </exec>
+	<exec executable="curl" outputproperty="sonarreturnCode">
+		<arg value="-o" />
+		<arg value="/proj/esjkadm100/Sonar/sonarOut.txt" />
+		<arg value="-k" />
+        <arg value="-u" />
+        <arg value="${sonar.login}:" />
+        <arg value="https://sonarqube.lmera.ericsson.se/api/qualitygates/project_status?projectKey=${sonar.projectKey}" />
+    </exec>
+    <exec executable="/bin/sh" outputproperty="sonarCode">
+        <arg value="-c" />
+        <arg value="/proj/eiffel013_config_fem6s11/tools/sonarQualityGateCheck.sh" />
+    </exec>
+    <echo message="Quality report returned ${sonarCode}"/>
+    <condition property="qualityMatch">
+        
+            <equals arg1="${sonarCode}" arg2="ERROR"/>
+        
+    </condition>
+    <fail if="qualityMatch" message="Quality check did not pass, hence marking build as failed!!!."/>
+</target>
+
+</project>
+
